@@ -18,27 +18,46 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Fix Project Structure & Build APK
+    - name: Build Android APK
       run: |
-        # יצירת קובץ ה-settings הראשי שדורש Gradle
-        echo "include ':app'" > settings.gradle
-        
-        # וידוא מבנה התיקיות של האפליקציה
+        # סידור מבנה התיקיות
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/java/com/example/whatsappblocker
         
-        # מעבר קבצים למקום הנכון אם הם עלו בטעות לתיקיית השורש
         [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
         [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
         [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
         [ -f build.gradle ] && mv build.gradle app/
-        
-        # יצירת קובץ ה-build הראשי של הפרויקט אם חסר
-        if [ ! -f build.gradle ]; then
-          echo "plugins { id 'com.android.application' version '8.2.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }" > build.gradle
-        fi
 
-        # הפעלת כלי הבנייה של אנדרואיד
+        # יצירת הגדרות פרויקט ראשיות עם מאגרים תקינים (Google & Maven Central)
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "WhatsAppBlocker"
+        include ':app'
+        EOF
+
+        # יצירת קובץ build.gradle ראשי לפרויקט
+        cat << 'EOF' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
+        }
+        EOF
+
+        # הרצת תהליך הבנייה
         gradle wrapper
         ./gradlew assembleDebug
 
