@@ -18,13 +18,27 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build APK with Gradle
+    - name: Fix Project Structure & Build APK
       run: |
+        # יצירת קובץ ה-settings הראשי שדורש Gradle
         echo "include ':app'" > settings.gradle
-        mkdir -p app/src/main
-        # העברת התיקיות למבנה הנכון אם צריך, או בנייה ישירה
-        chmod +x gradlew || true
-        # יצירת gradle wrapper בסיסי אם חסר
+        
+        # וידוא מבנה התיקיות של האפליקציה
+        mkdir -p app/src/main/res/xml
+        mkdir -p app/src/main/java/com/example/whatsappblocker
+        
+        # מעבר קבצים למקום הנכון אם הם עלו בטעות לתיקיית השורש
+        [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
+        [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
+        [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
+        [ -f build.gradle ] && mv build.gradle app/
+        
+        # יצירת קובץ ה-build הראשי של הפרויקט אם חסר
+        if [ ! -f build.gradle ]; then
+          echo "plugins { id 'com.android.application' version '8.2.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }" > build.gradle
+        fi
+
+        # הפעלת כלי הבנייה של אנדרואיד
         gradle wrapper
         ./gradlew assembleDebug
 
