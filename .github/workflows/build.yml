@@ -29,7 +29,7 @@ jobs:
         [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
         [ -f build.gradle ] && mv build.gradle app/
 
-        # יצירת settings.gradle בשורש עם הגדרת פלאגינים נכונה לגריידל
+        # יצירת settings.gradle בשורש
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -49,17 +49,12 @@ jobs:
         include ':app'
         EOF
 
-        # יצירת build.gradle ראשי בשורש הפרויקט שמפנה לפלאגין של אנדרואיד
-        cat << 'EOF' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.2' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
-        }
-        EOF
+        # יצירת build.gradle ראשי ריק (ההגדרות נמצאות בתוך app/build.gradle)
+        echo "// Root build file" > build.gradle
 
-        # שימוש בגרסה יציבה תואמת (Gradle 8.4) במקום הגרסה החדשה ביותר ששוברת תאימות
+        # הפעלת גרידל ובניית ה-APK של מודול app ספציפית
         gradle wrapper --gradle-version 8.4
-        ./gradlew assembleDebug
+        ./gradlew :app:assembleDebug
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
