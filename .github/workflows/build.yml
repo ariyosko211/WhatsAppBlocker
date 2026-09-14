@@ -20,16 +20,16 @@ jobs:
 
     - name: Build Android APK
       run: |
-        # יצירת מבנה התיקיות
+        # יצירת מבנה התיקיות המלא מאפס
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/java/com/example/whatsappblocker
         
+        # העברת קבצי המקור למקום הנכון אם קיימים בתיקיית השורש
         [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
         [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
         [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
-        [ -f build.gradle ] && mv build.gradle app/
 
-        # יצירת settings.gradle בשורש
+        # יצירת קובץ settings.gradle בשורש
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -49,10 +49,41 @@ jobs:
         include ':app'
         EOF
 
-        # יצירת build.gradle ראשי ריק (ההגדרות נמצאות בתוך app/build.gradle)
-        echo "// Root build file" > build.gradle
+        # יצירת קובץ build.gradle ראשי
+        echo "// Root build" > build.gradle
 
-        # הפעלת גרידל ובניית ה-APK של מודול app ספציפית
+        # יצירה אוטומטית של קובץ ה-build.gradle בתוך תיקיית app עם כל ההגדרות הנדרשות
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+
+        android {
+            namespace 'com.example.whatsappblocker'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "com.example.whatsappblocker"
+                minSdk 26
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+            }
+        }
+
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+        }
+        EOF
+
+        # הפעלת גרידל ובניית ה-APK
         gradle wrapper --gradle-version 8.4
         ./gradlew :app:assembleDebug
 
