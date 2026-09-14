@@ -21,7 +21,7 @@ jobs:
     - name: Build Android APK
       run: |
         mkdir -p app/src/main/res/xml
-        mkdir -p app/src/main/java/com/example/whatsappblocker
+        mkdir -p app/src/main/java/dev/infra/whatsappblocker
         
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
@@ -56,8 +56,8 @@ jobs:
             android:notificationTimeout="100" />
         EOF
 
-        cat << 'EOF' > app/src/main/java/com/example/whatsappblocker/WhatsAppStatusBlockerService.kt
-        package com.example.whatsappblocker
+        cat << 'EOF' > app/src/main/java/dev/infra/whatsappblocker/WhatsAppStatusBlockerService.kt
+        package dev.infra.whatsappblocker
         import android.accessibilityservice.AccessibilityService
         import android.view.accessibility.AccessibilityEvent
         import android.view.accessibility.AccessibilityNodeInfo
@@ -109,10 +109,10 @@ jobs:
             id 'org.jetbrains.kotlin.android' version '1.9.22'
         }
         android {
-            namespace 'com.example.whatsappblocker'
+            namespace 'dev.infra.whatsappblocker'
             compileSdk 34
             defaultConfig {
-                applicationId "com.example.whatsappblocker"
+                applicationId "dev.infra.whatsappblocker"
                 minSdk 26
                 targetSdk 34
                 versionCode 1
