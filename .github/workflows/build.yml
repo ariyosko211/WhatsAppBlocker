@@ -27,6 +27,9 @@ jobs:
         [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
         [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
 
+        # אישור שימוש בספריות AndroidX
+        echo "android.useAndroidX=true" > gradle.properties
+
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
