@@ -20,16 +20,13 @@ jobs:
 
     - name: Build Android APK
       run: |
-        # יצירת מבנה התיקיות המלא מאפס
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/java/com/example/whatsappblocker
         
-        # העברת קבצי המקור למקום הנכון אם קיימים בתיקיית השורש
         [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
         [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
         [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
 
-        # יצירת קובץ settings.gradle בשורש
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -49,14 +46,12 @@ jobs:
         include ':app'
         EOF
 
-        # יצירת קובץ build.gradle ראשי
         echo "// Root build" > build.gradle
 
-        # יצירה אוטומטית של קובץ ה-build.gradle בתוך תיקיית app עם כל ההגדרות הנדרשות
         cat << 'EOF' > app/build.gradle
         plugins {
-            id 'com.android.application'
-            id 'org.jetbrains.kotlin.android'
+            id 'com.android.application' version '8.2.2'
+            id 'org.jetbrains.kotlin.android' version '1.9.22'
         }
 
         android {
@@ -70,12 +65,6 @@ jobs:
                 versionCode 1
                 versionName "1.0"
             }
-
-            buildTypes {
-                release {
-                    minifyEnabled false
-                }
-            }
         }
 
         dependencies {
@@ -83,7 +72,6 @@ jobs:
         }
         EOF
 
-        # הפעלת גרידל ובניית ה-APK
         gradle wrapper --gradle-version 8.4
         ./gradlew :app:assembleDebug
 
