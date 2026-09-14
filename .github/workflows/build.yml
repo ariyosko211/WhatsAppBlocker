@@ -23,27 +23,80 @@ jobs:
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/java/com/example/whatsappblocker
         
-        [ -f AndroidManifest.xml ] && mv AndroidManifest.xml app/src/main/
-        [ -f accessibility_service_config.xml ] && mv accessibility_service_config.xml app/src/main/res/xml/
-        [ -f WhatsAppStatusBlockerService.kt ] && mv WhatsAppStatusBlockerService.kt app/src/main/java/com/example/whatsappblocker/
+        # יצירת הקבצים ישירות למניעת שגיאות מיקום
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+                android:allowBackup="true"
+                android:label="WhatsApp Blocker"
+                android:supportsRtl="true">
+                <service
+                    android:name=".WhatsAppStatusBlockerService"
+                    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+                    android:exported="false">
+                    <intent-filter>
+                        <action android:name="android.accessibilityservice.AccessibilityService" />
+                    </intent-filter>
+                    <meta-data
+                        android:name="android.accessibilityservice"
+                        android:resource="@xml/accessibility_service_config" />
+                </service>
+            </application>
+        </manifest>
+        EOF
 
-        # אישור שימוש בספריות AndroidX
+        cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+            android:accessibilityEventTypes="typeViewClicked|typeWindowContentChanged"
+            android:accessibilityFeedbackType="feedbackGeneric"
+            android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+            android:canRetrieveWindowContent="true"
+            android:packageNames="com.whatsapp"
+            android:notificationTimeout="100" />
+        EOF
+
+        cat << 'EOF' > app/src/main/java/com/example/whatsappblocker/WhatsAppStatusBlockerService.kt
+        package com.example.whatsappblocker
+        import android.accessibilityservice.AccessibilityService
+        import android.view.accessibility.AccessibilityEvent
+        import android.view.accessibility.AccessibilityNodeInfo
+        import android.widget.Toast
+        class WhatsAppStatusBlockerService : AccessibilityService() {
+            private var lastInteractedTime: Long = 0
+            override fun onAccessibilityEvent(event: AccessibilityEvent) {
+                if (event.packageName != "com.whatsapp") return
+                val rootNode: AccessibilityNodeInfo = rootInActiveWindow ?: return
+                val statusNodes = rootNode.findAccessibilityNodeInfosByText("סטטוסים")
+                    .ifEmpty { rootNode.findAccessibilityNodeInfosByText("Status") }
+                    .ifEmpty { rootNode.findAccessibilityNodeInfosByText("Updates") }
+                for (node in statusNodes) {
+                    if (node.isChecked || (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED && node.isVisibleToUser)) {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastInteractedTime > 3000) {
+                            lastInteractedTime = currentTime
+                            Toast.makeText(this, "עצור! למה לפתוח סטטוסים עכשיו? 🛑", Toast.LENGTH_LONG).show()
+                            performGlobalAction(GLOBAL_ACTION_BACK)
+                        }
+                        break
+                    }
+                }
+                rootNode.recycle()
+            }
+            override fun onInterrupt() {}
+        }
+        EOF
+
         echo "android.useAndroidX=true" > gradle.properties
 
         cat << 'EOF' > settings.gradle
         pluginManagement {
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
         }
         dependencyResolutionManagement {
             repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories {
-                google()
-                mavenCentral()
-            }
+            repositories { google(); mavenCentral() }
         }
         rootProject.name = "WhatsAppBlocker"
         include ':app'
@@ -56,11 +109,9 @@ jobs:
             id 'com.android.application' version '8.2.2'
             id 'org.jetbrains.kotlin.android' version '1.9.22'
         }
-
         android {
             namespace 'com.example.whatsappblocker'
             compileSdk 34
-
             defaultConfig {
                 applicationId "com.example.whatsappblocker"
                 minSdk 26
@@ -69,7 +120,6 @@ jobs:
                 versionName "1.0"
             }
         }
-
         dependencies {
             implementation 'androidx.core:core-ktx:1.12.0'
         }
