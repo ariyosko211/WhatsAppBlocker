@@ -18,6 +18,11 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.4'
+
     - name: Generate Release Keystore
       run: |
         keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias key0 -dname "CN=WhatsAppBlocker, OU=IT, O=Infra, L=Jerusalem, S=Jerusalem, C=IL" -storepass whatsapp123 -keypass whatsapp123
@@ -144,8 +149,8 @@ jobs:
         -keep class dev.infra.whatsappblocker.** { *; }
         EOF
 
-        gradle wrapper --gradle-version 8.4
-        ./gradlew :app:assembleRelease
+        # הרצה ישירה ללא Wrapper
+        gradle :app:assembleRelease
 
     - name: Upload Release APK artifact
       uses: actions/upload-artifact@v4
